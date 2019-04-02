@@ -26,6 +26,7 @@ import com.google.android.gms.nearby.connection.AdvertisingOptions;
 import com.google.android.gms.nearby.connection.ConnectionInfo;
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback;
 import com.google.android.gms.nearby.connection.ConnectionResolution;
+import com.google.android.gms.nearby.connection.ConnectionsClient;
 import com.google.android.gms.nearby.connection.ConnectionsStatusCodes;
 import com.google.android.gms.nearby.connection.DiscoveredEndpointInfo;
 import com.google.android.gms.nearby.connection.DiscoveryOptions;
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayAdapter<String> adapter;
     TextView deviceNameTextView;
     ProgressBar progressBar;
+    ConnectionsClient connectionsClient;
 
     private static final String[] REQUIRED_PERMISSIONS =
             new String[] {
@@ -68,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        connectionsClient = Nearby.getConnectionsClient(this);
 
         discoverButton = findViewById(R.id.discoverButton);
         advertiseButton = findViewById(R.id.advertiseButton);
@@ -135,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
     private void startAdvertising() {
         Toast.makeText(this, "In startAdvertising()", Toast.LENGTH_SHORT).show();
         AdvertisingOptions advertisingOptions = new AdvertisingOptions.Builder().setStrategy(STRATEGY).build();
-        Nearby.getConnectionsClient(this).startAdvertising(codeName, SERVICE_ID, connectionLifecycleCallback, advertisingOptions)
+        connectionsClient.startAdvertising(codeName, SERVICE_ID, connectionLifecycleCallback, advertisingOptions)
             .addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
                 public void onSuccess(Void unused) {
@@ -157,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startDiscovery() {
         DiscoveryOptions discoveryOptions = new DiscoveryOptions.Builder().setStrategy(STRATEGY).build();
-        Nearby.getConnectionsClient(this).startDiscovery(SERVICE_ID, endpointDiscoveryCallback, discoveryOptions)
+        connectionsClient.startDiscovery(SERVICE_ID, endpointDiscoveryCallback, discoveryOptions)
             .addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
                 public void onSuccess(Void unused) {
@@ -229,18 +233,18 @@ public class MainActivity extends AppCompatActivity {
                     .setPositiveButton("Accept", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Nearby.getConnectionsClient(MainActivity.this).acceptConnection(endpointId, payloadCallback);
+                            connectionsClient.acceptConnection(endpointId, payloadCallback);
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Nearby.getConnectionsClient(MainActivity.this).rejectConnection(endpointId);
+                            connectionsClient.rejectConnection(endpointId);
                         }
                     })
                     .show();
             Toast.makeText(MainActivity.this, "Connection initiated", Toast.LENGTH_SHORT).show();
-//                    Nearby.getConnectionsClient(MainActivity.this).acceptConnection(endpointId, payloadCallback);
+//                    connectionsClient.acceptConnection(endpointId, payloadCallback);
         }
 
         @Override
@@ -254,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT).show();
                     // We're connected! Can now start sending and receiving data.
                     Payload bytesPayload = Payload.fromBytes(new byte[] {0xa, 0xb, 0xc, 0xd});
-                    Nearby.getConnectionsClient(MainActivity.this).sendPayload(endpointId, bytesPayload);
+                    connectionsClient.sendPayload(endpointId, bytesPayload);
 
                     break;
                 case ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED:
@@ -299,9 +303,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void stopNearbyConnections()
     {
-        Nearby.getConnectionsClient(MainActivity.this).stopAdvertising();
-        Nearby.getConnectionsClient(MainActivity.this).stopDiscovery();
-        Nearby.getConnectionsClient(MainActivity.this).stopAllEndpoints();
+        connectionsClient.stopAdvertising();
+        connectionsClient.stopDiscovery();
+        connectionsClient.stopAllEndpoints();
 
     }
 
@@ -348,7 +352,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-        Nearby.getConnectionsClient(MainActivity.this).stopAllEndpoints();
+        connectionsClient.stopAllEndpoints();
 
         super.onStop();
     }
